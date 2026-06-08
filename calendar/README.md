@@ -14,7 +14,7 @@ It supports:
 - holidays (including movable ones)
 - time intelligence flags
 
----
+
 
 ## 🧱 Features
 
@@ -23,7 +23,7 @@ It supports:
 - Quarter (Q1–Q4)
 - Year-Month numeric key (for sorting)
 
----
+
 
 ### 📆 Calendar Logic
 - ISO Week Number
@@ -31,14 +31,14 @@ It supports:
 - Standard Week Number
 - Day of Week (1 = Monday)
 
----
+
 
 ### 🌍 Localization
 - Month names (English & Polish)
 - Day names (English & Polish)
 - Month-Year format (PL, e.g. "Sty 2024")
 
----
+
 
 ### 🏢 Business Logic
 - Weekend flag
@@ -46,7 +46,7 @@ It supports:
 - Work hours (0 for weekend, 8 for working day)
 - Shift classification (Weekend / Standard)
 
----
+
 
 ### 🇵🇱 Holidays (Poland)
 Includes:
@@ -55,7 +55,7 @@ Includes:
   - Easter Monday
   - Corpus Christi
 
----
+
 
 ### 📊 Time Intelligence
 Predefined flags for:
@@ -64,12 +64,12 @@ Predefined flags for:
 - Last 30 Days
 - Rolling 12 Months
 
----
+
 
 ### 💼 Fiscal Calendar
 - Fiscal year starting in July
 
----
+
 
 ## ⚙️ Technical Notes
 
@@ -78,7 +78,28 @@ Predefined flags for:
 - Implements Easter calculation algorithm in pure DAX
 - Designed for performance and usability in Power BI models
 
----
+
+
+## ⚠️ DAX vs Power Query (Important)
+
+This calendar can also be recreated in **Power Query (M)**, but there is a key difference:
+
+### ✅ DAX
+- evaluated dynamically
+- updates automatically based on current date (`TODAY()`)
+- always reflects the latest state when opening or interacting with the report
+
+### ⚠️ Power Query (M)
+- evaluated only during **data refresh**
+- `Today` is calculated at refresh time
+- values remain static until the next refresh
+
+👉 Example:
+- If you open the report tomorrow:
+  - DAX version → updates automatically ✅
+  - M version → still shows yesterday ❌ (until refresh)
+
+
 
 ## 📈 Recommended Usage
 
@@ -87,12 +108,17 @@ Use this table as:
 - a base for slicers and filters
 - a source for time-based calculations
 
----
+✅ Recommended:
+- use **DAX version** for reports and dashboards (dynamic)
+
+⚠️ Use Power Query version only when:
+- preparing data (ETL)
+- dynamic behavior is not required
+
 
 ## ✨ Author Notes
 
 This calendar is designed as a reusable, production-ready date dimension with extended functionality for real-world reporting scenarios.
 
-1. Copy the DAX script
-2. Create a new table in Power BI:
-  
+
+
