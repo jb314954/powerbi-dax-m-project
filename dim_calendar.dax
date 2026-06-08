@@ -1,0 +1,170 @@
+DimCalendar =
+VAR StartDate = DATE(2010,1,1)
+VAR EndDate = DATE(2035,12,31)
+
+RETURN
+ADDCOLUMNS(
+    CALENDAR(StartDate, EndDate),
+
+    // ===== PODSTAWY =====
+    "Year", YEAR([Date]),
+    "Month Number", MONTH([Date]),
+    "Day Number", DAY([Date]),
+    "Quarter", "Q" & FORMAT([Date],"Q"),
+
+    // ===== ISO =====
+    "ISO Week", WEEKNUM([Date],21),
+    "ISO Year", YEAR([Date] - WEEKDAY([Date],2) + 4),
+
+    // ===== TYGODNIE =====
+    "Week Number", WEEKNUM([Date],2),
+    "Day of Week Number", WEEKDAY([Date],2),
+
+    // ===== SORT =====
+    "YearMonth Number", YEAR([Date])*100 + MONTH([Date]),
+
+    // ===== NAZWY =====
+    "Month Name EN", FORMAT([Date], "MMMM"),
+
+    "Month Name PL",
+        SWITCH(MONTH([Date]),
+            1,"Styczeń",2,"Luty",3,"Marzec",4,"Kwiecień",
+            5,"Maj",6,"Czerwiec",7,"Lipiec",8,"Sierpień",
+            9,"Wrzesień",10,"Październik",11,"Listopad",12,"Grudzień"
+        ),
+
+    "Day Name EN", FORMAT([Date], "dddd"),
+
+    "Day Name PL",
+        SWITCH(WEEKDAY([Date],2),
+            1,"Poniedziałek",2,"Wtorek",3,"Środa",
+            4,"Czwartek",5,"Piątek",6,"Sobota",7,"Niedziela"
+        ),
+
+    // ===== FLAGI PODSTAWOWE =====
+    "Is Weekend", WEEKDAY([Date],2) >= 6,
+    "Is Today", [Date] = TODAY(),
+
+    // ===== ŚWIĘTA (1 TABLE VERSION ✅) =====
+    "Is Holiday",
+        VAR y = YEAR([Date])
+
+        VAR a = MOD(y,19)
+        VAR b = INT(y/100)
+        VAR c = MOD(y,100)
+        VAR d = INT(b/4)
+        VAR e = MOD(b,4)
+        VAR f = INT((b+8)/25)
+        VAR g = INT((b-f+1)/3)
+        VAR h = MOD(19*a+b-d-g+15,30)
+        VAR i = INT(c/4)
+        VAR k = MOD(c,4)
+        VAR l = MOD(32+2*e+2*i-h-k,7)
+        VAR m = INT((a+11*h+22*l)/451)
+
+        VAR EasterMonth = INT((h+l-7*m+114)/31)
+        VAR EasterDay = MOD(h+l-7*m+114,31)+1
+
+        VAR Easter = DATE(y,EasterMonth,EasterDay)
+        VAR EasterMonday = Easter + 1
+        VAR CorpusChristi = Easter + 60
+
+        RETURN
+            [Date] IN {
+                DATE(y,1,1),
+                DATE(y,1,6),
+                DATE(y,5,1),
+                DATE(y,5,3),
+                DATE(y,8,15),
+                DATE(y,11,1),
+                DATE(y,11,11),
+                DATE(y,12,25),
+                DATE(y,12,26),
+                EasterMonday,
+                CorpusChristi
+            },
+
+    // ✅ POPRAWKA: NIE używamy [Is Holiday]
+    "Is Business Day",
+        VAR y = YEAR([Date])
+
+        VAR a = MOD(y,19)
+        VAR b = INT(y/100)
+        VAR c = MOD(y,100)
+        VAR d = INT(b/4)
+        VAR e = MOD(b,4)
+        VAR f = INT((b+8)/25)
+        VAR g = INT((b-f+1)/3)
+        VAR h = MOD(19*a+b-d-g+15,30)
+        VAR i = INT(c/4)
+        VAR k = MOD(c,4)
+        VAR l = MOD(32+2*e+2*i-h-k,7)
+        VAR m = INT((a+11*h+22*l)/451)
+
+        VAR EasterMonth = INT((h+l-7*m+114)/31)
+        VAR EasterDay = MOD(h+l-7*m+114,31)+1
+
+        VAR Easter = DATE(y,EasterMonth,EasterDay)
+        VAR EasterMonday = Easter + 1
+        VAR CorpusChristi = Easter + 60
+
+        VAR IsHolidayCalc =
+            [Date] IN {
+                DATE(y,1,1),
+                DATE(y,1,6),
+                DATE(y,5,1),
+                DATE(y,5,3),
+                DATE(y,8,15),
+                DATE(y,11,1),
+                DATE(y,11,11),
+                DATE(y,12,25),
+                DATE(y,12,26),
+                EasterMonday,
+                CorpusChristi
+            }
+
+        RETURN
+            WEEKDAY([Date],2) <= 5 &&
+            NOT(IsHolidayCalc),
+
+    // ===== FISCAL =====
+    "Fiscal Year",
+        IF(MONTH([Date])>=7, YEAR([Date])+1, YEAR([Date])),
+
+    // ===== SLICERY =====
+    "Month Year PL",
+        SWITCH(MONTH([Date]),
+            1,"Sty",2,"Lut",3,"Mar",4,"Kwi",5,"Maj",6,"Cze",
+            7,"Lip",8,"Sie",9,"Wrz",10,"Paź",11,"Lis",12,"Gru"
+        ) & " " & YEAR([Date]),
+
+    // ===== TIME =====
+    "MTD",
+        YEAR([Date])=YEAR(TODAY()) &&
+        MONTH([Date])=MONTH(TODAY()) &&
+        [Date]<=TODAY(),
+
+    "YTD",
+        YEAR([Date])=YEAR(TODAY()) &&
+        [Date]<=TODAY(),
+
+    "Last 30 Days",
+        [Date] >= TODAY()-29 && [Date] <= TODAY(),
+
+    "Rolling 12M",
+        DATEDIFF([Date],TODAY(),MONTH)<=12 &&
+        [Date]<=TODAY(),
+
+    // ===== WORK =====
+    "Shift",
+        SWITCH(TRUE(),
+            WEEKDAY([Date],2) >= 6, "Weekend",
+            "Standard"
+        ),
+
+    "Work Hours",
+        SWITCH(TRUE(),
+            WEEKDAY([Date],2) >= 6, 0,
+            8
+        )
+)
